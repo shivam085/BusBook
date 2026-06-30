@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -10,24 +11,39 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Mock login — will be replaced with API call in Phase 2
+  // Check if user is logged in on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('bus_token');
+      if (token) {
+        try {
+          const { data } = await api.get('/auth/me');
+          setUser(data.user);
+        } catch (error) {
+          console.error('Session expired or invalid token');
+          localStorage.removeItem('bus_token');
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
   const login = async (email, password) => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 500));
-      const mockUser = {
-        id: 1,
-        name: email === 'admin@bus.com' ? 'Admin' : 'John Doe',
-        email,
-        role: email === 'admin@bus.com' ? 'admin' : 'user',
-      };
-      setUser(mockUser);
-      localStorage.setItem('bus_user', JSON.stringify(mockUser));
+      const { data } = await api.post('/auth/login', { email, password });
+      setUser(data.user);
+      localStorage.setItem('bus_token', data.token);
       return { success: true };
-    } catch {
-      return { success: false, message: 'Login failed' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Login failed' 
+      };
     } finally {
       setLoading(false);
     }
@@ -36,13 +52,15 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 500));
-      const mockUser = { id: 2, name, email, role: 'user' };
-      setUser(mockUser);
-      localStorage.setItem('bus_user', JSON.stringify(mockUser));
+      const { data } = await api.post('/auth/register', { name, email, password });
+      setUser(data.user);
+      localStorage.setItem('bus_token', data.token);
       return { success: true };
-    } catch {
-      return { success: false, message: 'Registration failed' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Registration failed' 
+      };
     } finally {
       setLoading(false);
     }
@@ -50,7 +68,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('bus_user');
     localStorage.removeItem('bus_token');
   };
 
@@ -63,6 +80,11 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
   };
+
+  // Prevent flashing protected routes before auth state is known
+  if (loading && !user) {
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
