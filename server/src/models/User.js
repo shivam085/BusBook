@@ -1,8 +1,15 @@
-const { DataTypes } = require('sequelize');
+const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcrypt');
 
-const User = sequelize.define('User', {
+class User extends Model {
+  // Instance method to check password
+  async isValidPassword(password) {
+    return await bcrypt.compare(password, this.password);
+  }
+}
+
+User.init({
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -29,6 +36,8 @@ const User = sequelize.define('User', {
     defaultValue: 'user',
   },
 }, {
+  sequelize,
+  modelName: 'User',
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {
@@ -42,10 +51,5 @@ const User = sequelize.define('User', {
     }
   }
 });
-
-// Instance method to check password
-User.prototype.isValidPassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
-};
 
 module.exports = User;
