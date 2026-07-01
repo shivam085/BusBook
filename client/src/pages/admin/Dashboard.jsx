@@ -1,26 +1,37 @@
 import { useState, useEffect } from 'react';
 import { getBuses, createBus, deleteBus } from '../../services/busService';
+import { getTrips, createTrip, deleteTrip } from '../../services/tripService';
 
 const Dashboard = () => {
   const [buses, setBuses] = useState([]);
+  const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Form state
+  // Bus Form state
   const [busNumber, setBusNumber] = useState('');
   const [capacity, setCapacity] = useState('');
   const [type, setType] = useState('Non-AC');
-  const [routeInput, setRouteInput] = useState(''); // Comma separated
+  const [routeInput, setRouteInput] = useState(''); 
+
+  // Trip Form state
+  const [selectedBusId, setSelectedBusId] = useState('');
+  const [tripDate, setTripDate] = useState('');
+  const [departureTime, setDepartureTime] = useState('');
+  const [arrivalTime, setArrivalTime] = useState('');
+  const [basePrice, setBasePrice] = useState('');
 
   useEffect(() => {
-    fetchBuses();
+    fetchData();
   }, []);
 
-  const fetchBuses = async () => {
+  const fetchData = async () => {
     try {
-      const data = await getBuses();
-      setBuses(data);
+      const [busData, tripData] = await Promise.all([getBuses(), getTrips()]);
+      setBuses(busData);
+      setTrips(tripData);
+      if (busData.length > 0) setSelectedBusId(busData[0].id);
     } catch (error) {
-      console.error('Failed to fetch buses');
+      console.error('Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -42,19 +53,54 @@ const Dashboard = () => {
       setType('Non-AC');
       setRouteInput('');
       // Refresh list
-      fetchBuses();
+      fetchData();
     } catch (error) {
       alert('Failed to add bus');
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleAddTrip = async (e) => {
+    e.preventDefault();
+    try {
+      // Sequelize expects HH:mm:ss, HTML time input provides HH:mm
+      const formattedDeparture = departureTime.length === 5 ? `${departureTime}:00` : departureTime;
+      const formattedArrival = arrivalTime.length === 5 ? `${arrivalTime}:00` : arrivalTime;
+
+      await createTrip({
+        busId: parseInt(selectedBusId),
+        date: tripDate,
+        departureTime: formattedDeparture,
+        estimatedArrivalTime: formattedArrival,
+        basePrice: parseFloat(basePrice)
+      });
+      setTripDate('');
+      setDepartureTime('');
+      setArrivalTime('');
+      setBasePrice('');
+      fetchData();
+    } catch (error) {
+      alert('Failed to schedule trip');
+    }
+  };
+
+  const handleDeleteBus = async (id) => {
     if (window.confirm('Are you sure you want to delete this bus?')) {
       try {
         await deleteBus(id);
-        fetchBuses();
+        fetchData();
       } catch (error) {
         alert('Failed to delete bus');
+      }
+    }
+  };
+
+  const handleDeleteTrip = async (id) => {
+    if (window.confirm('Are you sure you want to delete this trip?')) {
+      try {
+        await deleteTrip(id);
+        fetchData();
+      } catch (error) {
+        alert('Failed to delete trip');
       }
     }
   };
@@ -148,7 +194,123 @@ const Dashboard = () => {
                       <td className="p-3">{bus.route?.join(' ➔ ')}</td>
                       <td className="p-3">
                         <button 
-                          onClick={() => handleDelete(bus.id)}
+                          onClick={() => handleDeleteBus(bus.id)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      <hr className="my-12" />
+
+      {/* TRIPS SECTION */}
+      <h1 className="text-3xl font-bold mb-6">Schedule Trips</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* Form to Schedule Trip */}
+        <div className="bg-white p-6 border rounded shadow-sm h-fit">
+          <h2 className="text-xl font-semibold mb-4">New Trip</h2>
+          <form onSubmit={handleAddTrip} className="flex flex-col gap-4">
+            <div>
+              <label className="block mb-1 font-medium">Select Bus</label>
+              <select 
+                value={selectedBusId} 
+                onChange={(e) => setSelectedBusId(e.target.value)} 
+                className="w-full border p-2 rounded"
+                required
+              >
+                {buses.map(b => (
+                  <option key={b.id} value={b.id}>{b.busNumber} ({b.route?.join(' ➔ ')})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Date</label>
+              <input 
+                required 
+                value={tripDate} 
+                onChange={(e) => setTripDate(e.target.value)} 
+                type="date" 
+                className="w-full border p-2 rounded" 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block mb-1 font-medium">Departure</label>
+                <input 
+                  required 
+                  value={departureTime} 
+                  onChange={(e) => setDepartureTime(e.target.value)} 
+                  type="time" 
+                  className="w-full border p-2 rounded" 
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Arrival</label>
+                <input 
+                  required 
+                  value={arrivalTime} 
+                  onChange={(e) => setArrivalTime(e.target.value)} 
+                  type="time" 
+                  className="w-full border p-2 rounded" 
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Base Price (₹)</label>
+              <input 
+                required 
+                value={basePrice} 
+                onChange={(e) => setBasePrice(e.target.value)} 
+                type="number" 
+                className="w-full border p-2 rounded" 
+                placeholder="500" 
+              />
+            </div>
+            <button type="submit" className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+              Schedule Trip
+            </button>
+          </form>
+        </div>
+
+        {/* List of Trips */}
+        <div className="md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4">Scheduled Trips</h2>
+          {trips.length === 0 ? (
+            <p className="text-gray-500">No trips scheduled.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 border-b">
+                    <th className="p-3">Bus</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Departure</th>
+                    <th className="p-3">Arrival</th>
+                    <th className="p-3">Price</th>
+                    <th className="p-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trips.map((trip) => (
+                    <tr key={trip.id} className="border-b">
+                      <td className="p-3 font-medium">{trip.bus?.busNumber}</td>
+                      <td className="p-3">{trip.date}</td>
+                      <td className="p-3">{trip.departureTime}</td>
+                      <td className="p-3">{trip.estimatedArrivalTime}</td>
+                      <td className="p-3">₹{trip.basePrice}</td>
+                      <td className="p-3">
+                        <button 
+                          onClick={() => handleDeleteTrip(trip.id)}
                           className="text-red-600 hover:underline"
                         >
                           Delete

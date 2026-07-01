@@ -1,5 +1,6 @@
 # Project Rules
 
+- Never 'git commit' always ask first,
 - Never execute `git push` or push code to GitHub without explicitly asking for and receiving user permission first.
 
 ## Architecture & File Structure Guidelines
