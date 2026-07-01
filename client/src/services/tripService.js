@@ -5,6 +5,11 @@ export const searchTrips = async (origin, destination, date) => {
   return data.data; // ApiResponse format
 };
 
+export const getTripSeats = async (tripId) => {
+  const { data } = await api.get(`/trips/${tripId}/seats`);
+  return data.data;
+};
+
 export const createTrip = async (tripData) => {
   const { data } = await api.post('/trips', tripData);
   return data.data;

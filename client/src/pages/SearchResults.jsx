@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { searchTrips } from '../services/tripService';
 
 const SearchResults = () => {
@@ -90,14 +90,15 @@ const SearchResults = () => {
               </div>
 
               {/* Price & Action */}
-              <div className="flex-1 flex flex-col items-end">
-                <p className="text-2xl font-bold text-gray-800 mb-2">₹{trip.basePrice}</p>
-                <button 
-                  onClick={() => handleBook(trip.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded font-semibold w-full md:w-auto"
+              <div className="text-right">
+                <p className="text-2xl font-bold text-gray-900">₹{trip.basePrice}</p>
+                <p className="text-sm text-gray-500 mb-4">per seat</p>
+                <Link
+                  to={`/book/${trip.id}?origin=${searchParams.get('origin')}&destination=${searchParams.get('destination')}`}
+                  className="bg-blue-600 text-white px-6 py-2 rounded font-medium hover:bg-blue-700 transition-colors"
                 >
-                  VIEW SEATS
-                </button>
+                  View Seats
+                </Link>
               </div>
               
             </div>

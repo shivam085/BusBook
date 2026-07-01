@@ -26,35 +26,59 @@ class TripService {
     return true;
   }
 
-  async searchTrips(origin, destination, date) {
+  searchTrips = async (origin, destination, date) => {
     // 1. Fetch all trips for the specific date, including the Bus model
     const trips = await Trip.findAll({
       where: { date },
       include: [{ model: Bus, as: 'bus' }]
     });
 
-    // 2. Filter in-memory to ensure the route is valid
-    // The Bus's route array must contain both origin and destination
-    // AND the origin must appear before the destination in the route.
+    // 2. Filter trips in-memory based on the Bus's route array
     const validTrips = trips.filter(trip => {
-      const route = trip.bus.route;
-      
-      // Ensure route is an array before checking
-      if (!Array.isArray(route)) return false;
+      const route = trip.bus.route || [];
+      const originIndex = route.findIndex(stop => stop.toLowerCase() === origin.toLowerCase());
+      const destIndex = route.findIndex(stop => stop.toLowerCase() === destination.toLowerCase());
 
-      const originIndex = route.findIndex(
-        stop => stop.toLowerCase() === origin.toLowerCase()
-      );
-      const destIndex = route.findIndex(
-        stop => stop.toLowerCase() === destination.toLowerCase()
-      );
-
-      // Both stops exist and origin comes before destination
+      // Valid if both exist AND origin comes before destination
       return originIndex !== -1 && destIndex !== -1 && originIndex < destIndex;
     });
 
     return validTrips;
-  }
+  };
+
+  getTripSeats = async (tripId) => {
+    const { Booking } = require('../models');
+
+    // Fetch the trip along with the bus (for capacity)
+    const trip = await Trip.findByPk(tripId, {
+      include: [{ model: Bus, as: 'bus' }]
+    });
+
+    if (!trip) {
+      throw new ApiError(404, 'Trip not found');
+    }
+
+    // Fetch all confirmed bookings for this trip
+    const bookings = await Booking.findAll({
+      where: { 
+        tripId, 
+        status: 'confirmed' 
+      }
+    });
+
+    // Aggregate all booked seat numbers into a flat array
+    let bookedSeats = [];
+    bookings.forEach(booking => {
+      if (Array.isArray(booking.seatNumbers)) {
+        bookedSeats.push(...booking.seatNumbers);
+      }
+    });
+
+    return {
+      trip,
+      bookedSeats
+    };
+  };
 }
 
 module.exports = new TripService();

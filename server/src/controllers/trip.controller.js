@@ -43,6 +43,15 @@ class TripController {
       next(error);
     }
   };
+
+  getTripSeats = async (req, res, next) => {
+    try {
+      const data = await tripService.getTripSeats(req.params.id);
+      res.json(new ApiResponse(200, 'Trip seats retrieved successfully', data));
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = new TripController();

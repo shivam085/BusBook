@@ -27,9 +27,8 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/search" element={<SearchResults />} />
 
-              <Route path="/trips/:id/seats" element={
-                <ProtectedRoute><SeatSelection /></ProtectedRoute>
-              } />
+              <Route path="/book/:tripId" element={<SeatSelection />} />
+
               <Route path="/booking" element={
                 <ProtectedRoute><BookingPage /></ProtectedRoute>
               } />
