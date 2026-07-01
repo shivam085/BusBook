@@ -16,6 +16,11 @@ const Home = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const CITIES = [
+    'Mumbai', 'Pune', 'Delhi', 'Bangalore', 'Hyderabad', 
+    'Chennai', 'Kolkata', 'Ahmedabad', 'Goa', 'Jaipur'
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       
@@ -31,35 +36,40 @@ const Home = () => {
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="text-left">
               <label className="block text-sm font-semibold text-gray-600 mb-1">From</label>
-              <input 
-                type="text" 
+              <select 
                 required
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="e.g. Mumbai" 
-                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2"
-              />
+                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2 bg-white"
+              >
+                <option value="" disabled>Select Origin</option>
+                {CITIES.map(city => (
+                  <option key={`from-${city}`} value={city} disabled={city === destination}>{city}</option>
+                ))}
+              </select>
             </div>
             <div className="text-left">
               <label className="block text-sm font-semibold text-gray-600 mb-1">To</label>
-              <input 
-                type="text" 
+              <select 
                 required
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. Pune" 
-                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2"
-              />
+                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2 bg-white"
+              >
+                <option value="" disabled>Select Destination</option>
+                {CITIES.map(city => (
+                  <option key={`to-${city}`} value={city} disabled={city === origin}>{city}</option>
+                ))}
+              </select>
             </div>
             <div className="text-left">
               <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
               <input 
                 type="date" 
                 required
-                min={today}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2 text-gray-700"
+                className="w-full border-b-2 border-gray-300 focus:border-blue-600 outline-none p-2 text-gray-700 bg-white"
               />
             </div>
             <div>
