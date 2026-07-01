@@ -2,9 +2,10 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:5000/api', // Our backend base URL
+  withCredentials: true, // Important for sending/receiving cookies
 });
 
-// Intercept requests to add the JWT token
+// Intercept requests to add the JWT access token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('bus_token');
@@ -18,14 +19,32 @@ api.interceptors.request.use(
   }
 );
 
-// We can also add a response interceptor later to handle 401s (token expiry)
+// Response interceptor to handle 401s (token expiry) and retry with new token
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // In a real app, we might clear local storage and redirect to login
-      // localStorage.removeItem('bus_token');
-      // window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        // Attempt to refresh the token
+        const { data } = await axios.post('http://localhost:5000/api/auth/refresh-token', {}, { withCredentials: true });
+        
+        // Save the new access token
+        localStorage.setItem('bus_token', data.data.accessToken);
+        
+        // Retry the original request with new token
+        originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, log out
+        localStorage.removeItem('bus_token');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      }
     }
     return Promise.reject(error);
   }

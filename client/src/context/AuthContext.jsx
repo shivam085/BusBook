@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const { data } = await api.get('/auth/me');
-          setUser(data.user);
+          setUser(data.data);
         } catch (error) {
           console.error('Session expired or invalid token');
           localStorage.removeItem('bus_token');
@@ -36,13 +36,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email, password });
-      setUser(data.user);
-      localStorage.setItem('bus_token', data.token);
+      setUser(data.data.user);
+      localStorage.setItem('bus_token', data.data.accessToken);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed'
       };
     } finally {
       setLoading(false);
@@ -53,22 +53,28 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/register', { name, email, password });
-      setUser(data.user);
-      localStorage.setItem('bus_token', data.token);
+      setUser(data.data.user);
+      localStorage.setItem('bus_token', data.data.accessToken);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registration failed'
       };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('bus_token');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('bus_token');
+    }
   };
 
   const value = {
@@ -86,5 +92,7 @@ export const AuthProvider = ({ children }) => {
     return <div className="h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>
+    {children}
+  </AuthContext.Provider>;
 };

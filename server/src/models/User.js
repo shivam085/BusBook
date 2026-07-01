@@ -35,9 +35,21 @@ User.init({
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user',
   },
+  refreshToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   sequelize,
   modelName: 'User',
+  defaultScope: {
+    attributes: { exclude: ['password'] },
+  },
+  scopes: {
+    withPassword: {
+      attributes: {},
+    },
+  },
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {

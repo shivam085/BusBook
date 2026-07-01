@@ -1,0 +1,243 @@
+{
+	"info": {
+		"_postman_id": "c1f8a6b0-fd82-47cf-8f48-aec0408f9999",
+		"name": "Bus Booking System",
+		"description": "Complete API Collection for the Bus Booking Platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"johndoe@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "auth", "register" ]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@bus.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "auth", "login" ]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "auth", "me" ]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh-token",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "auth", "refresh-token" ]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "auth", "logout" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Bus Management (Admin)",
+			"item": [
+				{
+					"name": "Get All Buses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bus",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bus" ]
+						}
+					}
+				},
+				{
+					"name": "Create Bus",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"busNumber\": \"BUS-1001\",\n    \"capacity\": 40,\n    \"type\": \"AC Sleeper\",\n    \"route\": [\"Mumbai\", \"Pune\", \"Bangalore\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bus",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bus" ]
+						}
+					}
+				},
+				{
+					"name": "Update Bus",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"capacity\": 45\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bus/1",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bus", "1" ]
+						}
+					}
+				},
+				{
+					"name": "Delete Bus",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bus/1",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bus", "1" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Trip & Searching",
+			"item": [
+				{
+					"name": "Search Trips (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/trip/search?origin=Mumbai&destination=Pune&date=2025-12-25",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "trip", "search" ],
+							"query": [
+								{ "key": "origin", "value": "Mumbai" },
+								{ "key": "destination", "value": "Pune" },
+								{ "key": "date", "value": "2025-12-25" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Scheduled Trips (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/trip",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "trip" ]
+						}
+					}
+				},
+				{
+					"name": "Schedule a Trip (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"busId\": 1,\n    \"date\": \"2025-12-25\",\n    \"departureTime\": \"10:00:00\",\n    \"estimatedArrivalTime\": \"14:00:00\",\n    \"basePrice\": 1500\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/trip",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "trip" ]
+						}
+					}
+				},
+				{
+					"name": "Delete a Trip (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/trip/1",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "trip", "1" ]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "paste_your_access_token_here",
+			"type": "string"
+		}
+	]
+}
