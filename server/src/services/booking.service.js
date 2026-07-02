@@ -1,6 +1,8 @@
-const { Booking, Trip, Bus } = require('../models');
+const { Booking, Trip, Bus, User } = require('../models');
 const { ApiError } = require('../utils');
 const paymentService = require('./payment.service');
+const ticketService = require('./ticket.service');
+const emailService = require('./email.service');
 
 class BookingService {
   createBooking = async (userId, tripId, seatNumbers, totalAmount) => {
@@ -51,7 +53,20 @@ class BookingService {
   };
 
   verifyBookingPayment = async (bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
-    const booking = await Booking.findByPk(bookingId);
+    const booking = await Booking.findByPk(bookingId, {
+      include: [
+        {
+          model: Trip,
+          as: 'trip',
+          include: [{ model: Bus, as: 'bus' }]
+        },
+        {
+          model: User,
+          as: 'user'
+        }
+      ]
+    });
+    
     if (!booking) {
       throw new ApiError(404, 'Booking not found');
     }
@@ -71,7 +86,51 @@ class BookingService {
     booking.status = 'confirmed';
     await booking.save();
 
+    // Generate PDF and Send Email (Asynchronously)
+    ticketService.generateTicketPDF(booking, booking.user)
+      .then(pdfBuffer => {
+        const mailgenContent = emailService.ticketConfirmationMailgenContent(booking.user.name);
+        
+        return emailService.sendEmail({
+          email: booking.user.email,
+          subject: 'Your Bus Ticket Confirmation - BusBook',
+          mailgenContent: mailgenContent,
+          attachments: [
+            {
+              filename: `Ticket-${booking.id}.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf',
+            }
+          ]
+        });
+      })
+      .catch(err => console.error('Failed to generate or send ticket:', err));
+
     return booking;
+  };
+
+  getTicketPDF = async (userId, bookingId) => {
+    const booking = await Booking.findOne({
+      where: { id: bookingId, userId, status: 'confirmed' },
+      include: [
+        {
+          model: Trip,
+          as: 'trip',
+          include: [{ model: Bus, as: 'bus' }]
+        },
+        {
+          model: User,
+          as: 'user'
+        }
+      ]
+    });
+
+    if (!booking) {
+      throw new ApiError(404, 'Confirmed booking not found');
+    }
+
+    const pdfBuffer = await ticketService.generateTicketPDF(booking, booking.user);
+    return pdfBuffer;
   };
 
   getUserBookings = async (userId) => {

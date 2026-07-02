@@ -9,5 +9,6 @@ router.use(protect);
 router.post('/', bookingController.createBooking);
 router.post('/verify', bookingController.verifyPayment);
 router.get('/my-bookings', bookingController.getMyBookings);
+router.get('/:id/ticket', bookingController.downloadTicket);
 
 module.exports = router;

@@ -40,6 +40,21 @@ class BookingController {
       next(error);
     }
   };
+
+  downloadTicket = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const bookingId = req.params.id;
+
+      const pdfBuffer = await bookingService.getTicketPDF(userId, bookingId);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=Ticket-${bookingId}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = new BookingController();

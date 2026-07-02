@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMyBookings } from '../services/bookingService';
+import { getMyBookings, downloadTicket } from '../services/bookingService';
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -82,9 +82,20 @@ const MyBookings = () => {
                     <p className="text-sm text-gray-500">Seats</p>
                     <p className="font-bold">{booking.seatNumbers.join(', ')}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Amount Paid</p>
-                    <p className="font-bold text-lg text-blue-600">₹{booking.totalAmount}</p>
+                  <div className="flex items-center gap-6">
+                    {booking.status === 'confirmed' && (
+                      <button 
+                        onClick={() => downloadTicket(booking.id)}
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download E-Ticket
+                      </button>
+                    )}
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Amount Paid</p>
+                      <p className="font-bold text-lg text-blue-600">₹{booking.totalAmount}</p>
+                    </div>
                   </div>
                 </div>
               </div>
