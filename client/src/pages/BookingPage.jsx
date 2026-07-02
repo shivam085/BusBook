@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTripSeats } from '../services/tripService';
-import { createBooking } from '../services/bookingService';
+import { createBooking, verifyPayment } from '../services/bookingService';
+
+// Helper to load external scripts dynamically
+const loadScript = (src) => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -37,22 +48,88 @@ const BookingPage = () => {
   const handleConfirmBooking = async () => {
     try {
       setLoading(true);
-      const totalAmount = bookingIntent.selectedSeats.length * trip.basePrice;
       
-      await createBooking({
+      const res = await createBooking({
         tripId: bookingIntent.tripId,
         seatNumbers: bookingIntent.selectedSeats,
         totalAmount
       });
-
-      // Clear intent
-      localStorage.removeItem('pendingBooking');
       
-      // Navigate to My Bookings
-      navigate('/bookings');
+      const { booking, order } = res;
+
+      // Mock Mode bypass (if no API keys are provided in .env)
+      if (order.notes && order.notes.mock) {
+        alert('Mock Payment Mode: Simulating successful payment...');
+        
+        try {
+          await verifyPayment({
+            bookingId: booking.id,
+            razorpay_order_id: order.id,
+            razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substring(7),
+            razorpay_signature: 'mock_signature_valid'
+          });
+          localStorage.removeItem('pendingBooking');
+          navigate('/bookings');
+        } catch (verifyErr) {
+          setError('Mock Payment verification failed!');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Load Razorpay Script (Real Mode)
+      const resLoad = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!resLoad) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        setLoading(false);
+        return;
+      }
+
+      // Configure Razorpay Options
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_xxxxxx', 
+        amount: order.amount,
+        currency: order.currency,
+        name: 'BusBooking System',
+        description: 'Ticket Purchase',
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            setLoading(true);
+            await verifyPayment({
+              bookingId: booking.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            localStorage.removeItem('pendingBooking');
+            navigate('/bookings');
+          } catch (verifyErr) {
+            setError('Payment verification failed!');
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: 'Test User',
+          email: 'test@example.com',
+          contact: '9999999999'
+        },
+        theme: {
+          color: '#2563eb' // Tailwind blue-600
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      
+      paymentObject.on('payment.failed', function (response) {
+        alert('Payment Failed! ' + response.error.description);
+        setLoading(false);
+      });
+
+      paymentObject.open();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to confirm booking. Seats may have been taken.');
-    } finally {
+      setError(err.response?.data?.message || 'Failed to initiate booking. Seats may have been taken.');
       setLoading(false);
     }
   };
@@ -61,7 +138,10 @@ const BookingPage = () => {
   if (error) return <div className="text-center py-10 text-red-500">{error}</div>;
   if (!trip || !bookingIntent) return null;
 
-  const totalAmount = bookingIntent.selectedSeats.length * trip.basePrice;
+  const halfCapacity = Math.floor(trip.bus.capacity / 2);
+  const getSeatPrice = (seatNum) => seatNum > halfCapacity ? trip.basePrice * 1.5 : trip.basePrice;
+  
+  const totalAmount = bookingIntent.selectedSeats.reduce((sum, seat) => sum + getSeatPrice(seat), 0);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -103,11 +183,19 @@ const BookingPage = () => {
             <div className="bg-gray-50 p-4 rounded-lg flex justify-between">
               <div>
                 <p className="text-sm text-gray-500">Selected Seats</p>
-                <p className="font-bold">{bookingIntent.selectedSeats.join(', ')}</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {bookingIntent.selectedSeats.map(seat => (
+                    <span key={seat} className="font-bold">
+                      {seat} {seat > halfCapacity ? '(SL)' : '(ST)'}{bookingIntent.selectedSeats.indexOf(seat) !== bookingIntent.selectedSeats.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Price per seat</p>
-                <p className="font-medium">₹{trip.basePrice}</p>
+                <p className="text-sm text-gray-500">Amount Breakdown</p>
+                <p className="font-medium text-xs text-gray-400 mt-1">
+                  {bookingIntent.selectedSeats.map(seat => `₹${getSeatPrice(seat)}`).join(' + ')}
+                </p>
               </div>
             </div>
           </div>

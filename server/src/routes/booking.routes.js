@@ -7,6 +7,7 @@ const { protect } = require('../middlewares');
 router.use(protect);
 
 router.post('/', bookingController.createBooking);
+router.post('/verify', bookingController.verifyPayment);
 router.get('/my-bookings', bookingController.getMyBookings);
 
 module.exports = router;

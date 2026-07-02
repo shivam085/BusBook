@@ -7,8 +7,8 @@ class BookingController {
       const { tripId, seatNumbers, totalAmount } = req.body;
       const userId = req.user.id;
 
-      const booking = await bookingService.createBooking(userId, tripId, seatNumbers, totalAmount);
-      res.status(201).json(new ApiResponse(201, 'Booking created successfully', booking));
+      const result = await bookingService.createBooking(userId, tripId, seatNumbers, totalAmount);
+      res.status(201).json(new ApiResponse(201, 'Booking pending payment', result));
     } catch (error) {
       next(error);
     }
@@ -19,6 +19,23 @@ class BookingController {
       const userId = req.user.id;
       const bookings = await bookingService.getUserBookings(userId);
       res.json(new ApiResponse(200, 'Bookings retrieved successfully', bookings));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyPayment = async (req, res, next) => {
+    try {
+      const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+      
+      const confirmedBooking = await bookingService.verifyBookingPayment(
+        bookingId, 
+        razorpay_order_id, 
+        razorpay_payment_id, 
+        razorpay_signature
+      );
+      
+      res.json(new ApiResponse(200, 'Payment verified successfully', confirmedBooking));
     } catch (error) {
       next(error);
     }
