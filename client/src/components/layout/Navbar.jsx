@@ -30,7 +30,9 @@ const Navbar = () => {
             {isAuthenticated && (
               <>
                 <Link to="/bookings" className="text-gray-600 hover:text-gray-900 text-sm">My Bookings</Link>
-                <Link to="/wallet" className="text-gray-600 hover:text-gray-900 text-sm">Wallet</Link>
+                <Link to="/wallet" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-1">
+                  Wallet <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">₹{user?.walletBalance || 0}</span>
+                </Link>
               </>
             )}
 

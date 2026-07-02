@@ -35,6 +35,11 @@ User.init({
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user',
   },
+  walletBalance: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
+  },
   refreshToken: {
     type: DataTypes.STRING,
     allowNull: true,

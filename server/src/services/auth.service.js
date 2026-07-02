@@ -38,7 +38,7 @@ class AuthService {
     await user.save({ hooks: false });
 
     return {
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, walletBalance: user.walletBalance },
       ...tokens,
     };
   }
@@ -60,7 +60,7 @@ class AuthService {
     await user.save({ hooks: false });
 
     return {
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, walletBalance: user.walletBalance },
       ...tokens,
     };
   }
@@ -100,7 +100,7 @@ class AuthService {
 
   async getUserById(id) {
     const user = await User.findByPk(id, {
-      attributes: ['id', 'name', 'email', 'role'],
+      attributes: ['id', 'name', 'email', 'role', 'walletBalance'],
     });
     if (!user) {
       throw new ApiError(404, 'User not found');

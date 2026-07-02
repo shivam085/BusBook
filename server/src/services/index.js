@@ -3,8 +3,9 @@ const busService = require('./bus.service');
 const tripService = require('./trip.service');
 const bookingService = require('./booking.service');
 const paymentService = require('./payment.service');
-const ticketService = require('./ticket.service');
 const emailService = require('./email.service');
+const ticketService = require('./ticket.service');
+const walletService = require('./wallet.service');
 
 module.exports = {
   authService,
@@ -12,6 +13,7 @@ module.exports = {
   tripService,
   bookingService,
   paymentService,
+  emailService,
   ticketService,
-  emailService
+  walletService
 };

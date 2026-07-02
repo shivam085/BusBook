@@ -5,7 +5,7 @@ const ticketService = require('./ticket.service');
 const emailService = require('./email.service');
 
 class BookingService {
-  createBooking = async (userId, tripId, seatNumbers, totalAmount) => {
+  createBooking = async (userId, tripId, seatNumbers, totalAmount, paymentMethod = 'razorpay') => {
     // 1. Verify Trip exists
     const trip = await Trip.findByPk(tripId, {
       include: [{ model: Bus, as: 'bus' }]
@@ -37,7 +37,53 @@ class BookingService {
       throw new ApiError(409, `Seat ${conflict} is already booked! Please select another seat.`);
     }
 
-    // 3. Create the booking with 'pending' status
+    if (paymentMethod === 'wallet') {
+      const user = await User.findByPk(userId);
+      if (user.walletBalance < totalAmount) {
+        throw new ApiError(400, 'Insufficient wallet balance');
+      }
+
+      // Deduct balance
+      user.walletBalance -= totalAmount;
+      await user.save();
+
+      // Create confirmed booking
+      const booking = await Booking.create({
+        userId,
+        tripId,
+        seatNumbers,
+        totalAmount,
+        status: 'confirmed'
+      });
+
+      // Refetch booking with related data for ticket generation
+      const confirmedBooking = await Booking.findByPk(booking.id, {
+        include: [
+          { model: Trip, as: 'trip', include: [{ model: Bus, as: 'bus' }] },
+          { model: User, as: 'user' }
+        ]
+      });
+
+      // Generate PDF and Send Email asynchronously
+      ticketService.generateTicketPDF(confirmedBooking, confirmedBooking.user)
+        .then(pdfBuffer => {
+          const mailgenContent = emailService.ticketConfirmationMailgenContent(confirmedBooking.user.name);
+          return emailService.sendEmail({
+            email: confirmedBooking.user.email,
+            subject: 'Your Bus Ticket Confirmation - BusBook (Paid via Wallet)',
+            mailgenContent: mailgenContent,
+            attachments: [{
+              filename: `Ticket-${confirmedBooking.id}.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf',
+            }]
+          });
+        }).catch(err => console.error('Failed to generate or send ticket:', err));
+
+      return { booking: confirmedBooking, order: null, paidViaWallet: true, newWalletBalance: user.walletBalance };
+    }
+
+    // 3. Create the booking with 'pending' status (for Razorpay)
     const booking = await Booking.create({
       userId,
       tripId,
@@ -49,7 +95,7 @@ class BookingService {
     // 4. Create Razorpay order
     const order = await paymentService.createOrder(totalAmount, `receipt_booking_${booking.id}`);
 
-    return { booking, order };
+    return { booking, order, paidViaWallet: false };
   };
 
   verifyBookingPayment = async (bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature) => {

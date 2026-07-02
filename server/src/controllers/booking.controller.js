@@ -4,11 +4,18 @@ const { ApiResponse } = require('../utils');
 class BookingController {
   createBooking = async (req, res, next) => {
     try {
-      const { tripId, seatNumbers, totalAmount } = req.body;
+      const { tripId, seatNumbers, totalAmount, paymentMethod } = req.body;
       const userId = req.user.id;
 
-      const result = await bookingService.createBooking(userId, tripId, seatNumbers, totalAmount);
-      res.status(201).json(new ApiResponse(201, 'Booking pending payment', result));
+      if (!tripId || !seatNumbers || !totalAmount) {
+        throw new ApiError(400, 'Trip ID, Seat Numbers, and Total Amount are required');
+      }
+
+      const { booking, order, paidViaWallet, newWalletBalance } = await bookingService.createBooking(userId, tripId, seatNumbers, totalAmount, paymentMethod);
+
+      res.status(201).json(
+        new ApiResponse(201, 'Booking initiated successfully', { booking, order, paidViaWallet, newWalletBalance })
+      );
     } catch (error) {
       next(error);
     }

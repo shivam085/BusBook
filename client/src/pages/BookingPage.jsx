@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTripSeats } from '../services/tripService';
 import { createBooking, verifyPayment } from '../services/bookingService';
+import { useAuth } from '../context/AuthContext';
 
 // Helper to load external scripts dynamically
 const loadScript = (src) => {
@@ -45,6 +46,9 @@ const BookingPage = () => {
     fetchIntentAndTrip();
   }, [navigate]);
 
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const { user, updateUser } = useAuth();
+
   const handleConfirmBooking = async () => {
     try {
       setLoading(true);
@@ -52,10 +56,19 @@ const BookingPage = () => {
       const res = await createBooking({
         tripId: bookingIntent.tripId,
         seatNumbers: bookingIntent.selectedSeats,
-        totalAmount
+        totalAmount,
+        paymentMethod
       });
       
-      const { booking, order } = res;
+      const { booking, order, paidViaWallet, newWalletBalance } = res;
+
+      if (paidViaWallet) {
+        // Wallet payment bypasses Razorpay entirely
+        updateUser({ walletBalance: newWalletBalance });
+        localStorage.removeItem('pendingBooking');
+        navigate('/bookings');
+        return;
+      }
 
       // Mock Mode bypass (if no API keys are provided in .env)
       if (order.notes && order.notes.mock) {
@@ -111,8 +124,8 @@ const BookingPage = () => {
           }
         },
         prefill: {
-          name: 'Test User',
-          email: 'test@example.com',
+          name: user?.name || 'Test User',
+          email: user?.email || 'test@example.com',
           contact: '9999999999'
         },
         theme: {
@@ -142,6 +155,7 @@ const BookingPage = () => {
   const getSeatPrice = (seatNum) => seatNum > halfCapacity ? trip.basePrice * 1.5 : trip.basePrice;
   
   const totalAmount = bookingIntent.selectedSeats.reduce((sum, seat) => sum + getSeatPrice(seat), 0);
+  const hasEnoughWalletBalance = user?.walletBalance >= totalAmount;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -200,6 +214,47 @@ const BookingPage = () => {
             </div>
           </div>
 
+          {/* Payment Method Selection */}
+          <div className="mb-8">
+            <h4 className="font-semibold text-gray-700 mb-3">Select Payment Method</h4>
+            <div className="space-y-3">
+              <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="paymentMethod" 
+                  value="razorpay" 
+                  checked={paymentMethod === 'razorpay'} 
+                  onChange={() => setPaymentMethod('razorpay')}
+                  className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="ml-3 font-medium text-gray-800">Razorpay (Cards / UPI / NetBanking)</span>
+              </label>
+
+              <label className={`flex items-center p-4 border rounded-lg transition-colors ${hasEnoughWalletBalance ? 'cursor-pointer hover:bg-gray-50' : 'bg-gray-50 opacity-60 cursor-not-allowed'}`}>
+                <input 
+                  type="radio" 
+                  name="paymentMethod" 
+                  value="wallet" 
+                  checked={paymentMethod === 'wallet'} 
+                  onChange={() => {
+                    if (hasEnoughWalletBalance) setPaymentMethod('wallet')
+                  }}
+                  disabled={!hasEnoughWalletBalance}
+                  className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <div className="ml-3 flex-1 flex justify-between items-center">
+                  <span className="font-medium text-gray-800">Wallet Balance</span>
+                  <span className={`font-bold ${hasEnoughWalletBalance ? 'text-green-600' : 'text-red-500'}`}>
+                    Available: ₹{user?.walletBalance || 0}
+                  </span>
+                </div>
+              </label>
+              {!hasEnoughWalletBalance && (
+                <p className="text-sm text-red-500 mt-1 ml-1">Insufficient wallet balance. Please use Razorpay or add funds to your wallet.</p>
+              )}
+            </div>
+          </div>
+
           <div className="border-t pt-6 mb-8 flex justify-between items-center">
             <h3 className="text-xl font-bold text-gray-800">Total Amount Payable</h3>
             <p className="text-3xl font-bold text-blue-600">₹{totalAmount}</p>
@@ -210,7 +265,7 @@ const BookingPage = () => {
             disabled={loading}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-lg transition-colors shadow-lg hover:shadow-xl"
           >
-            {loading ? 'Processing...' : 'Confirm & Book Tickets'}
+            {loading ? 'Processing...' : (paymentMethod === 'wallet' ? 'Pay with Wallet & Book' : 'Confirm & Book Tickets')}
           </button>
         </div>
       </div>
