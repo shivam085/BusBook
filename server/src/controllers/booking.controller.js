@@ -34,14 +34,14 @@ class BookingController {
   verifyPayment = async (req, res, next) => {
     try {
       const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-      
+
       const confirmedBooking = await bookingService.verifyBookingPayment(
-        bookingId, 
-        razorpay_order_id, 
-        razorpay_payment_id, 
+        bookingId,
+        razorpay_order_id,
+        razorpay_payment_id,
         razorpay_signature
       );
-      
+
       res.json(new ApiResponse(200, 'Payment verified successfully', confirmedBooking));
     } catch (error) {
       next(error);
@@ -54,7 +54,7 @@ class BookingController {
       const bookingId = req.params.id;
 
       const pdfBuffer = await bookingService.getTicketPDF(userId, bookingId);
-      
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=Ticket-${bookingId}.pdf`);
       res.send(pdfBuffer);

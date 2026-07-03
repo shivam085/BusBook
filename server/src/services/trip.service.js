@@ -60,9 +60,9 @@ class TripService {
 
     // Fetch all confirmed bookings for this trip
     const bookings = await Booking.findAll({
-      where: { 
-        tripId, 
-        status: 'confirmed' 
+      where: {
+        tripId,
+        status: 'confirmed'
       }
     });
 

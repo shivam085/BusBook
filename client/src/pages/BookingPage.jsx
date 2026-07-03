@@ -52,14 +52,14 @@ const BookingPage = () => {
   const handleConfirmBooking = async () => {
     try {
       setLoading(true);
-      
+
       const res = await createBooking({
         tripId: bookingIntent.tripId,
         seatNumbers: bookingIntent.selectedSeats,
         totalAmount,
         paymentMethod
       });
-      
+
       const { booking, order, paidViaWallet, newWalletBalance } = res;
 
       if (paidViaWallet) {
@@ -73,7 +73,7 @@ const BookingPage = () => {
       // Mock Mode bypass (if no API keys are provided in .env)
       if (order.notes && order.notes.mock) {
         alert('Mock Payment Mode: Simulating successful payment...');
-        
+
         try {
           await verifyPayment({
             bookingId: booking.id,
@@ -100,7 +100,7 @@ const BookingPage = () => {
 
       // Configure Razorpay Options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_xxxxxx', 
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_xxxxxx',
         amount: order.amount,
         currency: order.currency,
         name: 'BusBooking System',
@@ -134,7 +134,7 @@ const BookingPage = () => {
       };
 
       const paymentObject = new window.Razorpay(options);
-      
+
       paymentObject.on('payment.failed', function (response) {
         alert('Payment Failed! ' + response.error.description);
         setLoading(false);
@@ -153,14 +153,14 @@ const BookingPage = () => {
 
   const halfCapacity = Math.floor(trip.bus.capacity / 2);
   const getSeatPrice = (seatNum) => seatNum > halfCapacity ? trip.basePrice * 1.5 : trip.basePrice;
-  
+
   const totalAmount = bookingIntent.selectedSeats.reduce((sum, seat) => sum + getSeatPrice(seat), 0);
   const hasEnoughWalletBalance = user?.walletBalance >= totalAmount;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Checkout</h1>
-      
+
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         {/* Header */}
         <div className="bg-blue-600 text-white p-6">
@@ -219,11 +219,11 @@ const BookingPage = () => {
             <h4 className="font-semibold text-gray-700 mb-3">Select Payment Method</h4>
             <div className="space-y-3">
               <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                <input 
-                  type="radio" 
-                  name="paymentMethod" 
-                  value="razorpay" 
-                  checked={paymentMethod === 'razorpay'} 
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="razorpay"
+                  checked={paymentMethod === 'razorpay'}
                   onChange={() => setPaymentMethod('razorpay')}
                   className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
@@ -231,11 +231,11 @@ const BookingPage = () => {
               </label>
 
               <label className={`flex items-center p-4 border rounded-lg transition-colors ${hasEnoughWalletBalance ? 'cursor-pointer hover:bg-gray-50' : 'bg-gray-50 opacity-60 cursor-not-allowed'}`}>
-                <input 
-                  type="radio" 
-                  name="paymentMethod" 
-                  value="wallet" 
-                  checked={paymentMethod === 'wallet'} 
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="wallet"
+                  checked={paymentMethod === 'wallet'}
                   onChange={() => {
                     if (hasEnoughWalletBalance) setPaymentMethod('wallet')
                   }}
@@ -260,7 +260,7 @@ const BookingPage = () => {
             <p className="text-3xl font-bold text-blue-600">₹{totalAmount}</p>
           </div>
 
-          <button 
+          <button
             onClick={handleConfirmBooking}
             disabled={loading}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-lg transition-colors shadow-lg hover:shadow-xl"

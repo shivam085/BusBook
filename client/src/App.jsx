@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import Navbar from './components/layout/Navbar';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
@@ -17,8 +18,9 @@ import Dashboard from './pages/admin/Dashboard';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-50">
+      <SocketProvider>
+        <BrowserRouter>
+          <div className="min-h-screen bg-gray-50">
           <Navbar />
           <main>
             <Routes>
@@ -51,8 +53,9 @@ function App() {
               } />
             </Routes>
           </main>
-        </div>
-      </BrowserRouter>
+          </div>
+        </BrowserRouter>
+      </SocketProvider>
     </AuthProvider>
   );
 }

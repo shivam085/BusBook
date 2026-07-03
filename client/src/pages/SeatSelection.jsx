@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getTripSeats } from '../services/tripService';
 import { useAuth } from '../context/AuthContext';
+import { SocketContext } from '../context/SocketContext';
 
 const SeatSelection = () => {
   const { tripId } = useParams();
@@ -14,8 +15,34 @@ const SeatSelection = () => {
 
   const [trip, setTrip] = useState(null);
   const [bookedSeats, setBookedSeats] = useState([]);
+  const [lockedByOthers, setLockedByOthers] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { socket } = useContext(SocketContext);
+
+  useEffect(() => {
+    if (!socket || !tripId) return;
+
+    socket.emit('join_trip', tripId);
+
+    socket.on('initial_locked_seats', (seats) => {
+      setLockedByOthers(seats);
+    });
+
+    socket.on('seat_updated', ({ seatId, status }) => {
+      if (status === 'locked') {
+        setLockedByOthers(prev => [...prev, seatId]);
+      } else if (status === 'available') {
+        setLockedByOthers(prev => prev.filter(s => s !== seatId));
+      }
+    });
+
+    return () => {
+      socket.off('initial_locked_seats');
+      socket.off('seat_updated');
+    };
+  }, [socket, tripId]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -34,16 +61,18 @@ const SeatSelection = () => {
   }, [tripId]);
 
   const toggleSeat = (seatNumber) => {
-    if (bookedSeats.includes(seatNumber)) return;
+    if (bookedSeats.includes(seatNumber) || lockedByOthers.includes(seatNumber)) return;
     
     if (selectedSeats.includes(seatNumber)) {
       setSelectedSeats(selectedSeats.filter(s => s !== seatNumber));
+      if (socket) socket.emit('unlock_seat', { tripId, seatId: seatNumber });
     } else {
       if (selectedSeats.length >= 6) {
         alert('You can only book up to 6 seats at once');
         return;
       }
       setSelectedSeats([...selectedSeats, seatNumber]);
+      if (socket) socket.emit('lock_seat', { tripId, seatId: seatNumber });
     }
   };
 
@@ -99,7 +128,7 @@ const SeatSelection = () => {
           <div className="bg-white p-4 rounded-xl shadow-sm border mb-8 flex flex-wrap justify-center gap-8 text-sm font-medium text-gray-700">
             <div className="flex items-center gap-3"><div className="w-5 h-5 border-2 border-gray-300 rounded bg-white shadow-sm"></div> Available</div>
             <div className="flex items-center gap-3"><div className="w-5 h-5 rounded bg-blue-600 shadow-md ring-2 ring-blue-200 ring-offset-1"></div> Selected</div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded bg-gray-200 border border-gray-300 opacity-70"></div> Booked</div>
+            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded bg-gray-200 border border-gray-300 opacity-70"></div> Booked/Locked</div>
           </div>
 
           <div className="flex flex-col xl:flex-row gap-8 overflow-x-auto pb-4">
@@ -117,7 +146,7 @@ const SeatSelection = () => {
               {/* Seater Grid: 2x2 with aisle */}
               <div className="grid grid-cols-5 gap-y-5 gap-x-3">
                 {lowerDeckSeats.flatMap((seatNum, index) => {
-                  const isBooked = bookedSeats.includes(seatNum);
+                  const isBooked = bookedSeats.includes(seatNum) || lockedByOthers.includes(seatNum);
                   const isSelected = selectedSeats.includes(seatNum);
 
                   const seatElement = (
@@ -171,7 +200,7 @@ const SeatSelection = () => {
               {/* Sleeper Grid: 1x2 with aisle (Beds take 2 rows of space vertically, we simulate with wide cells) */}
               <div className="grid grid-cols-4 gap-y-6 gap-x-4">
                 {upperDeckSeats.map((seatNum, index) => {
-                  const isBooked = bookedSeats.includes(seatNum);
+                  const isBooked = bookedSeats.includes(seatNum) || lockedByOthers.includes(seatNum);
                   const isSelected = selectedSeats.includes(seatNum);
                   
                   // For sleepers, maybe 1 left, aisle, 1 right. Using a 4 col grid: [Bed] [Aisle] [Aisle] [Bed]

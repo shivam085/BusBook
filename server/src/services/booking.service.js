@@ -18,9 +18,9 @@ class BookingService {
     // 2. Double check availability in real time to prevent race conditions
     // Note: We only check against confirmed bookings. Pending bookings expire/cancel if unpaid.
     const existingBookings = await Booking.findAll({
-      where: { 
-        tripId, 
-        status: 'confirmed' 
+      where: {
+        tripId,
+        status: 'confirmed'
       }
     });
 
@@ -112,7 +112,7 @@ class BookingService {
         }
       ]
     });
-    
+
     if (!booking) {
       throw new ApiError(404, 'Booking not found');
     }
@@ -123,7 +123,7 @@ class BookingService {
 
     // Verify signature with PaymentService
     const isValid = paymentService.verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-    
+
     if (!isValid) {
       throw new ApiError(400, 'Payment signature verification failed!');
     }
@@ -136,7 +136,7 @@ class BookingService {
     ticketService.generateTicketPDF(booking, booking.user)
       .then(pdfBuffer => {
         const mailgenContent = emailService.ticketConfirmationMailgenContent(booking.user.name);
-        
+
         return emailService.sendEmail({
           email: booking.user.email,
           subject: 'Your Bus Ticket Confirmation - BusBook',
