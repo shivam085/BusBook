@@ -1,4 +1,5 @@
 const authService = require('./auth.service');
+const adminService = require('./admin.service');
 const busService = require('./bus.service');
 const tripService = require('./trip.service');
 const bookingService = require('./booking.service');
@@ -15,5 +16,6 @@ module.exports = {
   paymentService,
   emailService,
   ticketService,
-  walletService
+  walletService,
+  adminService
 };

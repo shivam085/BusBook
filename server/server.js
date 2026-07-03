@@ -33,7 +33,7 @@ const startServer = async () => {
 
     // In a real production app you wouldn't use force or alter typically, 
     // you would use migrations. For this phase, alter is fine.
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log('Database synchronized successfully.');
 
     server.listen(PORT, () => {

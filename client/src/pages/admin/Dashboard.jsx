@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getBuses, createBus, deleteBus } from '../../services/busService';
 import { getTrips, createTrip, deleteTrip } from '../../services/tripService';
+import { getDashboardStats } from '../../services/adminService';
 
 const Dashboard = () => {
   const [buses, setBuses] = useState([]);
   const [trips, setTrips] = useState([]);
+  const [stats, setStats] = useState({ totalUsers: 0, totalBookings: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
   
   // Bus Form state
@@ -26,9 +28,14 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [busData, tripData] = await Promise.all([getBuses(), getTrips()]);
+      const [busData, tripData, statsData] = await Promise.all([
+        getBuses(), 
+        getTrips(),
+        getDashboardStats()
+      ]);
       setBuses(busData);
       setTrips(tripData);
+      if (statsData) setStats(statsData);
       if (busData.length > 0) setSelectedBusId(busData[0].id);
     } catch (error) {
       console.error('Failed to fetch data');
@@ -109,8 +116,25 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-6xl mx-auto mt-8 p-4">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard - Manage Buses</h1>
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-md">
+          <p className="text-blue-100 font-medium">Total Users</p>
+          <h3 className="text-3xl font-bold mt-2">{stats.totalUsers}</h3>
+        </div>
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-md">
+          <p className="text-purple-100 font-medium">Total Bookings</p>
+          <h3 className="text-3xl font-bold mt-2">{stats.totalBookings}</h3>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-md">
+          <p className="text-emerald-100 font-medium">Total Revenue</p>
+          <h3 className="text-3xl font-bold mt-2">₹{stats.totalRevenue.toLocaleString('en-IN')}</h3>
+        </div>
+      </div>
+
+      <h2 className="text-2xl font-bold mb-6">Manage System Data</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* Form to Add Bus */}
