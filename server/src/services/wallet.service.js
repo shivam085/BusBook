@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const paymentService = require('./payment.service');
 const { ApiError } = require('../utils');
+const sequelize = require('../config/database');
 
 class WalletService {
   /**
@@ -35,8 +36,16 @@ class WalletService {
       throw new ApiError(404, 'User not found');
     }
 
-    user.walletBalance += amount;
-    await user.save();
+    // Use an unmanaged transaction for consistency in DB operations
+    const t = await sequelize.transaction();
+    try {
+      user.walletBalance += amount;
+      await user.save({ transaction: t });
+      await t.commit();
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
 
     return user.walletBalance;
   }

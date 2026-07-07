@@ -226,6 +226,151 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "4. Bookings & Tickets",
+			"item": [
+				{
+					"name": "Get Booked Seats for Trip",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/trip/1/seats",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "trip", "1", "seats" ]
+						}
+					}
+				},
+				{
+					"name": "Create Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tripId\": 1,\n    \"seatNumbers\": [\"L1\", \"L2\"],\n    \"totalAmount\": 3000,\n    \"paymentMethod\": \"razorpay\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bookings" ]
+						}
+					}
+				},
+				{
+					"name": "Verify Booking Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bookingId\": 1,\n    \"razorpay_order_id\": \"order_...\",\n    \"razorpay_payment_id\": \"pay_...\",\n    \"razorpay_signature\": \"...\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/verify",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bookings", "verify" ]
+						}
+					}
+				},
+				{
+					"name": "Get My Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/my-bookings",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bookings", "my-bookings" ]
+						}
+					}
+				},
+				{
+					"name": "Download E-Ticket",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bookings/1/ticket",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "bookings", "1", "ticket" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Wallet",
+			"item": [
+				{
+					"name": "Top-up Wallet (Create Order)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/topup",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "wallet", "topup" ]
+						}
+					}
+				},
+				{
+					"name": "Verify Wallet Top-up",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1000,\n    \"razorpay_order_id\": \"order_...\",\n    \"razorpay_payment_id\": \"pay_...\",\n    \"razorpay_signature\": \"...\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/wallet/verify",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "wallet", "verify" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Admin Stats",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/stats",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "admin", "stats" ]
+						}
+					}
+				}
+			]
 		}
 	],
 	"variable": [

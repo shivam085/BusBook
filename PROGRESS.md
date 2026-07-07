@@ -107,8 +107,26 @@ This document provides a detailed, phase-by-phase summary of all architectural d
 
 ---
 
-## 🚀 Current Status & Next Steps
-All infrastructure for Users, Buses, Trips, real-time Seat Availability, UI rendering, the complete Booking Flow, Razorpay Payments, PDF Generation, and Email Delivery is fully operational.
+## 💰 Phase 8: User Wallet & Payments
+**Goal:** Implement an in-app Wallet system.
+- Users can securely top up their balance via Razorpay.
+- Built a wallet deduction flow during checkout for instant, one-click seamless ticket booking.
 
-**Next Immediate Goal (Phase 8): User Wallet & Add Funds!**
-We will implement an in-app Wallet system where users can securely top up their balance (via Razorpay) and use those funds directly during checkout for instant, one-click seamless ticket booking.
+---
+
+## ⚡ Phase 10: Real-Time Seat Locking (Sockets)
+**Goal:** Prevent seat booking collisions visually in real-time.
+- **Backend:** Integrated `socket.io` with a `seatHandler.js` logic that tracks locked seats using a Map. Locks automatically expire after 15 minutes.
+- **Frontend:** Wrapped the app in a `SocketProvider`. The `SeatSelection.jsx` component now emits and listens to lock/unlock events, turning seats gray immediately across all active browser windows when someone selects them.
+
+---
+
+## 📊 Phase 11: Admin Analytics & ACID Transactions
+**Goal:** Enhance the Admin Dashboard and secure the financial data flows.
+- **Admin Stats UI:** Built a highly optimized API endpoint to fetch total Users, Bookings, and Revenue. Designed three premium UI cards on the frontend dashboard to display this live data.
+- **Unmanaged DB Transactions:** Upgraded both the Booking and Wallet services to use Sequelize Unmanaged Transactions (`t.commit()` and `t.rollback()`). This ensures total ACID compliance, meaning if a ticket fails to generate after a wallet deduction, the deduction is instantly rolled back and the user's money is perfectly safe.
+
+---
+
+## 🚀 Current Status & Next Steps
+The core application, including real-time web-sockets, payment gateways, automated emails, PDF generation, and ACID compliant database transactions, is fully operational!

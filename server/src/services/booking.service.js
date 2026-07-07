@@ -3,6 +3,7 @@ const { ApiError } = require('../utils');
 const paymentService = require('./payment.service');
 const ticketService = require('./ticket.service');
 const emailService = require('./email.service');
+const sequelize = require('../config/database');
 
 class BookingService {
   createBooking = async (userId, tripId, seatNumbers, totalAmount, paymentMethod = 'razorpay') => {
@@ -43,26 +44,38 @@ class BookingService {
         throw new ApiError(400, 'Insufficient wallet balance');
       }
 
-      // Deduct balance
-      user.walletBalance -= totalAmount;
-      await user.save();
+      // Start an unmanaged transaction
+      const t = await sequelize.transaction();
+      let confirmedBooking;
+      
+      try {
+        // Deduct balance
+        user.walletBalance -= totalAmount;
+        await user.save({ transaction: t });
 
-      // Create confirmed booking
-      const booking = await Booking.create({
-        userId,
-        tripId,
-        seatNumbers,
-        totalAmount,
-        status: 'confirmed'
-      });
+        // Create confirmed booking
+        const booking = await Booking.create({
+          userId,
+          tripId,
+          seatNumbers,
+          totalAmount,
+          status: 'confirmed'
+        }, { transaction: t });
 
-      // Refetch booking with related data for ticket generation
-      const confirmedBooking = await Booking.findByPk(booking.id, {
-        include: [
-          { model: Trip, as: 'trip', include: [{ model: Bus, as: 'bus' }] },
-          { model: User, as: 'user' }
-        ]
-      });
+        // Refetch booking with related data for ticket generation
+        confirmedBooking = await Booking.findByPk(booking.id, {
+          include: [
+            { model: Trip, as: 'trip', include: [{ model: Bus, as: 'bus' }] },
+            { model: User, as: 'user' }
+          ],
+          transaction: t
+        });
+
+        await t.commit();
+      } catch (error) {
+        await t.rollback();
+        throw error;
+      }
 
       // Generate PDF and Send Email asynchronously
       ticketService.generateTicketPDF(confirmedBooking, confirmedBooking.user)
@@ -128,9 +141,17 @@ class BookingService {
       throw new ApiError(400, 'Payment signature verification failed!');
     }
 
-    // Mark as confirmed
-    booking.status = 'confirmed';
-    await booking.save();
+    // Start an unmanaged transaction
+    const t = await sequelize.transaction();
+    try {
+      // Mark as confirmed
+      booking.status = 'confirmed';
+      await booking.save({ transaction: t });
+      await t.commit();
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
 
     // Generate PDF and Send Email (Asynchronously)
     ticketService.generateTicketPDF(booking, booking.user)
