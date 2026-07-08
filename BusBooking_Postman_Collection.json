@@ -98,9 +98,9 @@
 							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/bus",
+							"raw": "{{baseUrl}}/api/buses",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "bus" ]
+							"path": [ "api", "buses" ]
 						}
 					}
 				},
@@ -117,9 +117,9 @@
 							"raw": "{\n    \"busNumber\": \"BUS-1001\",\n    \"capacity\": 40,\n    \"type\": \"AC Sleeper\",\n    \"route\": [\"Mumbai\", \"Pune\", \"Bangalore\"]\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/bus",
+							"raw": "{{baseUrl}}/api/buses",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "bus" ]
+							"path": [ "api", "buses" ]
 						}
 					}
 				},
@@ -136,9 +136,9 @@
 							"raw": "{\n    \"capacity\": 45\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/bus/1",
+							"raw": "{{baseUrl}}/api/buses/1",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "bus", "1" ]
+							"path": [ "api", "buses", "1" ]
 						}
 					}
 				},
@@ -150,9 +150,9 @@
 							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/bus/1",
+							"raw": "{{baseUrl}}/api/buses/1",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "bus", "1" ]
+							"path": [ "api", "buses", "1" ]
 						}
 					}
 				}
@@ -167,9 +167,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/trip/search?origin=Mumbai&destination=Pune&date=2025-12-25",
+							"raw": "{{baseUrl}}/api/trips/search?origin=Mumbai&destination=Pune&date=2025-12-25",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "trip", "search" ],
+							"path": [ "api", "trips", "search" ],
 							"query": [
 								{ "key": "origin", "value": "Mumbai" },
 								{ "key": "destination", "value": "Pune" },
@@ -186,9 +186,9 @@
 							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/trip",
+							"raw": "{{baseUrl}}/api/trips",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "trip" ]
+							"path": [ "api", "trips" ]
 						}
 					}
 				},
@@ -205,9 +205,9 @@
 							"raw": "{\n    \"busId\": 1,\n    \"date\": \"2025-12-25\",\n    \"departureTime\": \"10:00:00\",\n    \"estimatedArrivalTime\": \"14:00:00\",\n    \"basePrice\": 1500\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/trip",
+							"raw": "{{baseUrl}}/api/trips",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "trip" ]
+							"path": [ "api", "trips" ]
 						}
 					}
 				},
@@ -219,9 +219,9 @@
 							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/trip/1",
+							"raw": "{{baseUrl}}/api/trips/1",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "trip", "1" ]
+							"path": [ "api", "trips", "1" ]
 						}
 					}
 				}
@@ -236,9 +236,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/trip/1/seats",
+							"raw": "{{baseUrl}}/api/trips/1/seats",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "trip", "1", "seats" ]
+							"path": [ "api", "trips", "1", "seats" ]
 						}
 					}
 				},
