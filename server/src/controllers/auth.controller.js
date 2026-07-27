@@ -10,8 +10,8 @@ class AuthController {
       // Set refresh token as httpOnly cookie
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true, // Must be true for SameSite=none
+        sameSite: 'none', // Allow cross-domain cookies
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -31,8 +31,8 @@ class AuthController {
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -62,8 +62,8 @@ class AuthController {
       // Rotate the cookie as well
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
