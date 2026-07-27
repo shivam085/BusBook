@@ -7,8 +7,15 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
     logging: false, // Set to true to see SQL queries in console
+    dialectOptions: {
+      ssl: process.env.DB_HOST !== 'localhost' ? {
+        require: true,
+        rejectUnauthorized: false // Aiven requires SSL
+      } : false
+    }
   }
 );
 
