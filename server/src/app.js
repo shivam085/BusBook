@@ -8,7 +8,7 @@ const { errorHandler } = require('./middlewares');
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173', // or your frontend url
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Support deployed frontend
   credentials: true
 }));
 app.use(express.json());

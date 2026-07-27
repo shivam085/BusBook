@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Our backend base URL
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', // Use env variable in prod
   withCredentials: true, // Important for sending/receiving cookies
 });
 
@@ -29,7 +29,8 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         // Attempt to refresh the token
-        const { data } = await axios.post('http://localhost:5000/api/auth/refresh-token', {}, { withCredentials: true });
+        const refreshUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh-token`;
+        const { data } = await axios.post(refreshUrl, {}, { withCredentials: true });
         
         // Save the new access token
         localStorage.setItem('bus_token', data.data.accessToken);
