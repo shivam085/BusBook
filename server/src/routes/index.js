@@ -33,11 +33,12 @@ router.get('/test-email-live', async (req, res) => {
 
     const transporter = nodemailer.createTransport({
       host: ipv4,
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
       tls: {
-        servername: 'smtp.gmail.com', // Required when connecting via IP
+        servername: 'smtp.gmail.com',
         rejectUnauthorized: false
       }
     });

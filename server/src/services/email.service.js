@@ -35,14 +35,15 @@ const sendEmail = async (options) => {
 
     const transporter = nodemailer.createTransport({
       host: ipv4,
-      port: 465,
-      secure: true,
+      port: 587, // Render often blocks 465, try 587
+      secure: false, // true for 465, false for other ports
+      requireTLS: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
       tls: {
-        servername: 'smtp.gmail.com', // Required when connecting via IP address
+        servername: 'smtp.gmail.com',
         rejectUnauthorized: false
       }
     });
