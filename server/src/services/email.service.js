@@ -1,5 +1,4 @@
 const Mailgen = require('mailgen');
-const nodemailer = require('nodemailer');
 const dns = require('dns');
 
 // Force IPv4 for DNS resolution. Fixes "connect ENETUNREACH" IPv6 errors on Render
@@ -25,45 +24,35 @@ const sendEmail = async (options) => {
       return;
     }
 
-    // Force IPv4 lookup for Render compatibility
-    const ipv4 = await new Promise((resolve, reject) => {
-      dns.lookup('smtp.gmail.com', 4, (err, address) => {
-        if (err) reject(err);
-        else resolve(address);
-      });
-    });
-
-    const transporter = nodemailer.createTransport({
-      host: ipv4,
-      port: 587, // Render often blocks 465, try 587
-      secure: false, // true for 465, false for other ports
-      requireTLS: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+    // Use Vercel Serverless Function Proxy because Render's free tier blocks all outbound SMTP
+    const proxyUrl = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/api/send-email` : 'https://bus-book-blue.vercel.app/api/send-email';
+    
+    console.log(`Sending email request to Vercel proxy: ${proxyUrl}...`);
+    
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.EMAIL_PROXY_SECRET || 'busbook-secret-key-123'}`
       },
-      tls: {
-        servername: 'smtp.gmail.com',
-        rejectUnauthorized: false
-      }
+      body: JSON.stringify({
+        to: options.email,
+        subject: options.subject,
+        text: emailTextual,
+        html: emailHtml,
+        attachments: options.attachments || []
+      })
     });
 
-    const mail = {
-      from: '"BusBook Tickets" <' + process.env.EMAIL_USER + '>',
-      to: options.email,
-      subject: options.subject,
-      text: emailTextual,
-      html: emailHtml,
-      attachments: options.attachments || [],
-    };
+    const data = await response.json();
 
-    await transporter.sendMail(mail);
-    console.log(`Email successfully sent to ${options.email} via IPv4: ${ipv4}`);
+    if (!response.ok) {
+      throw new Error(data.error || 'Unknown proxy error');
+    }
+
+    console.log(`Email successfully sent to ${options.email} via Vercel proxy!`);
   } catch (error) {
-    console.error(
-      'Email service failed. Make sure that you have provided your SMTP credentials in the .env file'
-    );
-    console.error('Error: ', error);
+    console.error('Email service failed via Vercel Proxy:', error);
   }
 };
 
