@@ -13,7 +13,14 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      if (!origin || origin === clientUrl || origin.endsWith('.vercel.app')) {
+        callback(null, origin);
+      } else {
+        callback(null, clientUrl);
+      }
+    },
     credentials: true
   }
 });
