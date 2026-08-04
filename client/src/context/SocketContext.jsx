@@ -9,9 +9,10 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Connect to backend server
     const newSocket = io(
-      import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000',
+      import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000',
       {
-        withCredentials: true,  // Send cookies with connection if needed
+        withCredentials: true,
+        transports: ['polling'], // Use polling only (Render free tier doesn't support WebSockets well)
       }
     );
 
