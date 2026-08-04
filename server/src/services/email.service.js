@@ -55,7 +55,7 @@ const ticketConfirmationMailgenContent = (username) => {
         button: {
           color: "#22BC66",
           text: "View My Bookings",
-          link: "http://localhost:5173/bookings",
+          link: process.env.CLIENT_URL || "http://localhost:5173/bookings",
         },
       },
       outro: "You must present this ticket (digitally or printed) along with a valid Government ID while boarding. Have a safe trip!",
