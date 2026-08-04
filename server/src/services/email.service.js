@@ -19,33 +19,48 @@ const sendEmail = async (options) => {
   const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  const mail = {
-    from: '"BusBook Tickets" <' + process.env.EMAIL_USER + '>',
-    to: options.email,
-    subject: options.subject,
-    text: emailTextual,
-    html: emailHtml,
-    attachments: options.attachments || [],
-  };
-
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log('Skipping email: No SMTP credentials configured.');
       return;
     }
+
+    // Force IPv4 lookup for Render compatibility
+    const ipv4 = await new Promise((resolve, reject) => {
+      dns.lookup('smtp.gmail.com', 4, (err, address) => {
+        if (err) reject(err);
+        else resolve(address);
+      });
+    });
+
+    const transporter = nodemailer.createTransport({
+      host: ipv4,
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      tls: {
+        servername: 'smtp.gmail.com', // Required when connecting via IP address
+        rejectUnauthorized: false
+      }
+    });
+
+    const mail = {
+      from: '"BusBook Tickets" <' + process.env.EMAIL_USER + '>',
+      to: options.email,
+      subject: options.subject,
+      text: emailTextual,
+      html: emailHtml,
+      attachments: options.attachments || [],
+    };
+
     await transporter.sendMail(mail);
-    console.log(`Email successfully sent to ${options.email}`);
+    console.log(`Email successfully sent to ${options.email} via IPv4: ${ipv4}`);
   } catch (error) {
     console.error(
-      'Email service failed silently. Make sure that you have provided your SMTP credentials in the .env file'
+      'Email service failed. Make sure that you have provided your SMTP credentials in the .env file'
     );
     console.error('Error: ', error);
   }

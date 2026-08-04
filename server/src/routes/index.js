@@ -17,22 +17,39 @@ router.use('/admin', adminRoutes);
 
 router.get('/test-email-live', async (req, res) => {
   const nodemailer = require('nodemailer');
+  const dns = require('dns');
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       return res.status(500).json({ error: 'Missing EMAIL_USER or EMAIL_PASS in Render env variables' });
     }
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    
+    // Manually force IPv4 resolution
+    const ipv4 = await new Promise((resolve, reject) => {
+      dns.lookup('smtp.gmail.com', 4, (err, address) => {
+        if (err) reject(err);
+        else resolve(address);
+      });
     });
+
+    const transporter = nodemailer.createTransport({
+      host: ipv4,
+      port: 465,
+      secure: true,
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      tls: {
+        servername: 'smtp.gmail.com', // Required when connecting via IP
+        rejectUnauthorized: false
+      }
+    });
+
     await transporter.verify();
     await transporter.sendMail({
       from: '"BusBook Live Test" <' + process.env.EMAIL_USER + '>',
       to: 'bbllive101@gmail.com',
-      subject: 'Live Server Email Test',
-      text: 'This email was sent from the Render server directly!'
+      subject: 'Live Server Email Test (IPv4 Forced)',
+      text: 'This email was sent from the Render server directly using forced IPv4!'
     });
-    res.json({ success: true, message: 'Email sent successfully from Render!' });
+    res.json({ success: true, message: `Email sent successfully from Render via IPv4: ${ipv4}` });
   } catch (error) {
     res.status(500).json({ error: error.message, stack: error.stack, code: error.code });
   }
