@@ -1,5 +1,11 @@
 const Mailgen = require('mailgen');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force IPv4 for DNS resolution. Fixes "connect ENETUNREACH" IPv6 errors on Render
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({

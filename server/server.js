@@ -1,4 +1,8 @@
 require('dotenv').config();
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first'); // Force IPv4 for Render to fix ENETUNREACH SMTP errors
+}
 const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./src/app');
