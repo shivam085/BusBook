@@ -1,10 +1,5 @@
 const Mailgen = require('mailgen');
-const dns = require('dns');
-
-// Force IPv4 for DNS resolution. Fixes "connect ENETUNREACH" IPv6 errors on Render
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
+const clientUrl = (process.env.CLIENT_URL || 'https://bus-book-blue.vercel.app').replace(/\/+$/, '');
 
 const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
@@ -19,13 +14,14 @@ const sendEmail = async (options) => {
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log('Skipping email: No SMTP credentials configured.');
+    const proxySecret = process.env.EMAIL_PROXY_SECRET;
+    if (!proxySecret) {
+      console.error('Ticket email skipped: EMAIL_PROXY_SECRET is missing on the backend.');
       return;
     }
 
     // Use Vercel Serverless Function Proxy because Render's free tier blocks all outbound SMTP
-    const proxyUrl = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/api/send-email` : 'https://bus-book-blue.vercel.app/api/send-email';
+    const proxyUrl = `${clientUrl}/api/send-email`;
     
     console.log(`Sending email request to Vercel proxy: ${proxyUrl}...`);
     
@@ -33,24 +29,29 @@ const sendEmail = async (options) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.EMAIL_PROXY_SECRET || 'busbook-secret-key-123'}`
+        'Authorization': `Bearer ${proxySecret}`
       },
+      signal: AbortSignal.timeout(20000),
       body: JSON.stringify({
         to: options.email,
         subject: options.subject,
         text: emailTextual,
         html: emailHtml,
-        attachments: options.attachments || []
+        attachments: (options.attachments || []).map(({ filename, content, contentType }) => ({
+          filename,
+          content: content.toString('base64'),
+          contentType
+        }))
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Unknown proxy error');
+    if (!response.ok || data?.success !== true) {
+      throw new Error(`Email proxy returned HTTP ${response.status}`);
     }
 
-    console.log(`Email successfully sent to ${options.email} via Vercel proxy!`);
+    console.log('Ticket email accepted by SMTP via Vercel proxy.');
   } catch (error) {
     console.error('Email service failed via Vercel Proxy:', error);
   }
@@ -66,7 +67,7 @@ const ticketConfirmationMailgenContent = (username) => {
         button: {
           color: "#22BC66",
           text: "View My Bookings",
-          link: process.env.CLIENT_URL || "http://localhost:5173/bookings",
+          link: `${clientUrl}/bookings`,
         },
       },
       outro: "You must present this ticket (digitally or printed) along with a valid Government ID while boarding. Have a safe trip!",

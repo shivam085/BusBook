@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   // CORS setup
@@ -17,13 +17,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { to, subject, html, text, attachments } = req.body;
     const authHeader = req.headers.authorization;
+    const proxySecret = process.env.EMAIL_PROXY_SECRET;
 
-    // Use a simple secret key to prevent unauthorized usage
-    if (authHeader !== `Bearer ${process.env.EMAIL_PROXY_SECRET || 'busbook-secret-key-123'}`) {
+    if (!proxySecret || authHeader !== `Bearer ${proxySecret}`) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const { to, subject, html, text, attachments = [] } = req.body;
 
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       return res.status(500).json({ error: 'Server email credentials missing' });
@@ -37,18 +38,26 @@ export default async function handler(req, res) {
       },
     });
 
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from: '"BusBook Tickets" <' + process.env.EMAIL_USER + '>',
       to,
       subject,
       text,
       html,
-      attachments
+      attachments: attachments.map(({ filename, content, contentType }) => ({
+        filename,
+        content: Buffer.from(content, 'base64'),
+        contentType
+      }))
     });
+
+    if (!result.accepted.length) {
+      return res.status(502).json({ error: 'SMTP rejected the recipient' });
+    }
 
     res.status(200).json({ success: true, message: 'Email sent successfully via Vercel Proxy' });
   } catch (error) {
-    console.error('Email Proxy Error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Email Proxy Error:', error.code || error.name, error.responseCode || '');
+    res.status(500).json({ error: 'Email delivery failed' });
   }
 }
